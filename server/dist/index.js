@@ -17,33 +17,48 @@ const wss = new ws_1.WebSocketServer({ port: 8080 });
 //     "message": "Hi there"
 // }
 // }
-let userCount = 0;
 let allSockets = [];
 wss.on("connection", (socket) => {
-    userCount += 1;
-    console.log("user connected: ", userCount);
     socket.on("message", (msg) => {
-        var _a;
-        const parsedMessage = JSON.parse(msg);
-        if (parsedMessage.type === "join") {
-            allSockets.push({
-                socket: socket,
-                room: parsedMessage.payload.roomId
-            });
-            socket.send(parsedMessage.payload.roomId);
+        var _a, _b;
+        try {
+            const parsedMessage = JSON.parse(msg);
+            if (parsedMessage.type === "join") {
+                console.log(parsedMessage.payload.username + " has joined room: ", parsedMessage.payload.roomId);
+                allSockets.push({
+                    socket: socket,
+                    room: parsedMessage.payload.roomId,
+                    username: parsedMessage.payload.username
+                });
+            }
+            if (parsedMessage.type === "chat") {
+                const currentUserRoom = (_a = allSockets.find(x => x.socket == socket)) === null || _a === void 0 ? void 0 : _a.room;
+                const sender = (_b = allSockets.find((s) => s.socket == socket)) === null || _b === void 0 ? void 0 : _b.username;
+                allSockets.map(s => {
+                    if (s.room === currentUserRoom) {
+                        if (s.socket == socket) {
+                            s.socket.send(JSON.stringify({
+                                "sender": sender,
+                                "text": parsedMessage.payload.message,
+                                "src": true
+                            }));
+                        }
+                        else {
+                            s.socket.send(JSON.stringify({
+                                "sender": sender,
+                                "text": parsedMessage.payload.message,
+                                "src": false
+                            }));
+                        }
+                    }
+                });
+            }
         }
-        if (parsedMessage.type === "chat") {
-            const currentUserRoom = (_a = allSockets.find(x => x.socket == socket)) === null || _a === void 0 ? void 0 : _a.room;
-            allSockets.map(s => {
-                if (s.room === currentUserRoom) {
-                    s.socket.send(parsedMessage.payload.message);
-                }
-            });
+        catch (err) {
+            console.log(err);
         }
     });
     socket.on("close", () => {
-        userCount -= 1;
-        console.log("user disconnected: ", userCount);
         allSockets = allSockets.filter(x => x.socket != socket);
         console.log(allSockets.length);
     });

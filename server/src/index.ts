@@ -4,7 +4,8 @@ const wss = new WebSocketServer({port: 8080});
 
 interface inputSchema {
     socket: WebSocket,
-    room: string
+    room: string,
+    username: string,
 }
 
 // user can do 2 things - 
@@ -23,38 +24,53 @@ interface inputSchema {
 // }
 // }
 
-
-let userCount = 0;
 let allSockets: inputSchema[] = [];
 
 wss.on("connection", (socket) => {
-    userCount += 1;
-    console.log("user connected: ", userCount)
-
+    
     socket.on("message", (msg: string) => {
-        const parsedMessage = JSON.parse(msg);
+        try{
+            const parsedMessage = JSON.parse(msg);
 
-        if(parsedMessage.type === "join"){
-            allSockets.push({
-                socket: socket,
-                room: parsedMessage.payload.roomId
-            })
-            socket.send(parsedMessage.payload.roomId)
-        }
+            if(parsedMessage.type === "join"){
+                console.log(parsedMessage.payload.username + " has joined room: ", parsedMessage.payload.roomId)
+                allSockets.push({
+                    socket: socket,
+                    room: parsedMessage.payload.roomId,
+                    username: parsedMessage.payload.username
+                })
+            }
 
-        if(parsedMessage.type === "chat"){
-            const currentUserRoom = allSockets.find(x => x.socket == socket)?.room as string;
+            if(parsedMessage.type === "chat"){
+                const currentUserRoom = allSockets.find(x => x.socket == socket)?.room as string;
 
-            allSockets.map(s => {
-                if(s.room === currentUserRoom){
-                    s.socket.send(parsedMessage.payload.message)
-                }
-            })
+                const sender = allSockets.find((s) => s.socket == socket)?.username
+
+                allSockets.map(s => {
+                    if(s.room === currentUserRoom){
+                        if(s.socket == socket){
+                            s.socket.send(JSON.stringify({
+                                "sender": sender,
+                                "text": parsedMessage.payload.message,
+                                "src": true
+                            }))
+                        }
+                        else{
+                            s.socket.send(JSON.stringify({
+                                "sender": sender,
+                                "text": parsedMessage.payload.message,
+                                "src": false
+                            }))
+                        }
+                        
+                    }
+                })
+            }
+        } catch(err){
+            console.log(err)
         }
     })
     socket.on("close", () => {
-        userCount -= 1;
-        console.log("user disconnected: ", userCount)
         
         allSockets = allSockets.filter(x => x.socket != socket)
         console.log(allSockets.length);
