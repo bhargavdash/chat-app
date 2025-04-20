@@ -1,6 +1,9 @@
 import { WebSocketServer, WebSocket } from "ws";
+import dotenv from 'dotenv';
+dotenv.config();
 
-const wss = new WebSocketServer({port: 8080});
+const PORT = parseInt(process.env.PORT || '3000');
+const wss = new WebSocketServer({port: PORT});
 
 interface inputSchema {
     socket: WebSocket,

@@ -5,7 +5,8 @@ function App() {
   const [socket, setSocket] = useState<WebSocket>()
 
   useEffect(() => {
-    const ws = new WebSocket("wss://chat-app-ev3n.onrender.com");
+    // const ws = new WebSocket("wss://chat-app-ev3n.onrender.com");
+    const ws = new WebSocket("ws://localhost:8080")
     
     setSocket(ws)
 

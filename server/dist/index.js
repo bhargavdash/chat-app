@@ -1,7 +1,13 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const ws_1 = require("ws");
-const wss = new ws_1.WebSocketServer({ port: 8080 });
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
+const PORT = parseInt(process.env.PORT || '3000');
+const wss = new ws_1.WebSocketServer({ port: PORT });
 // user can do 2 things - 
 // 1. join the room 
 // 2. send a message in the room
